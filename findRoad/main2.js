@@ -18,6 +18,7 @@ const points = [
     new Point(4, 0), // C - 2
     new Point(3, 3), // D - 3
     new Point(1, 2), // E - 4
+    new Point(1, 1.5), // F - 5 
 ];
 
 
@@ -30,9 +31,11 @@ class Line {
 
 const lines = [
     new Line(points[0], points[4]),
+    new Line(points[0], points[5]),
     new Line(points[4], points[1]),
+    // new Line(points[4], points[3]),
     new Line(points[1], points[3]),
-    new Line(points[3], points[2]),
+    // new Line(points[3], points[2]),
     new Line(points[2], points[0]),
     new Line(points[1], points[0]),
 ]
@@ -105,7 +108,12 @@ function extractUniquePoints(lines) {
         uniquePoints.add(line.start);
         uniquePoints.add(line.end);
     }
-    return Array.from(uniquePoints);
+    return Array.from(uniquePoints).sort((a, b) => {
+        if (a.x === b.x) {
+          return a.y - b.y; 
+        }
+        return a.x - b.x;
+    });
 }
 
 
@@ -114,31 +122,62 @@ function orientationCal(p, q, r) {
 }
 
 function findRoad(points) {
+    points.sort((a, b) => {
+        if (a.x === b.x) {
+          return a.y - b.y; 
+        }
+        return a.x - b.x;
+    });
     let listPoint = [];
     let xMinus = 0;
-    for (let i = 1; i < points.length; i++) {
-        if (points[i].x < points[xMinus].x) {
-            xMinus = i;
-        }
-    }
-
     let p = xMinus;
     let q;
     do {
-        console.log(`điểm bắt đầu (${points[p].x}, ${points[p].y})`)
         listPoint.push(points[p]);
-        q = (p + 1) % points.length;
-        console.log(`điểm so sánh (${points[q].x}, ${points[q].y})`)
-        for (let i = 0; i < points.length; i++) {
-            if (orientationCal(points[p], points[q], points[i]) > 0) {
-                q = i;
-            }
+        console.log(`điểm bắt đầu (${points[p].x}, ${points[p].y})`)
+        const lineFormPoint = findLineFromPoints(points[p], lines)
+        let listPointHasLine = extractUniquePoints(lineFormPoint);
+        // Loại bỏ các điểm đã có trong listPoint
+        
+        listPointHasLine = listPointHasLine.filter(point => 
+            !listPoint.some(p => p.x === point.x && p.y === point.y)
+        );
+        console.log(listPointHasLine)
+              // Tìm điểm tiếp theo
+        const nextPoint = findNextPoint(listPointHasLine);
+        console.log(nextPoint)
+        if (!nextPoint) {
+            console.log("Không tìm thấy điểm tiếp theo, dừng vòng lặp.");
+            break;  // Nếu không tìm thấy điểm tiếp theo, dừng vòng lặp
         }
+        q = points.indexOf(nextPoint);
+        console.log(`Điểm tiếp theo có chỉ số: ${q}`);
         p = q;
     } while (p != xMinus);
-
     return listPoint;
 }
+
+function findNextPoint(listPointHasLine) {
+    // Sắp xếp các điểm theo tọa độ x, nếu x bằng nhau thì sắp xếp theo y ngược lại
+    listPointHasLine.sort((a, b) => {
+        if (a.x === b.x) {
+            return b.y - a.y;  // Sắp xếp theo y giảm dần nếu x bằng nhau
+        }
+        return a.x - b.x;      // Sắp xếp theo x tăng dần
+    });
+
+    // Trả về điểm đầu tiên trong danh sách đã sắp xếp
+    return listPointHasLine[0];
+}
+
+function findLineFromPoints(point, lines) {
+    console.log(lines)
+    return lines.filter(line => 
+        (line.start.x === point.x && line.start.y === point.y) || 
+        (line.end.x === point.x && line.end.y === point.y)
+    );
+}
+
 
 const uniquePoints = extractUniquePoints(lines);
 console.log("Các điểm duy nhất từ các đường thẳng:");
@@ -168,8 +207,15 @@ function checkRoadIncludeLines() {
     return true
 }
 
+function checkCompletedRoad() {
+    return road.length > 2 && lines.some(line => line => 
+        (line.start === road[0] && line.end === road[road.length]) || 
+        (line.start === road[road.length] && line.end === road[0])
+    );
+}
+
 // In kết quả
-if (checkRoadIncludeLines(road)) {
+if (checkCompletedRoad()) {
     console.log("Đường bao quanh gồm các điểm:");
     road.forEach(p => console.log(`(${p.x}, ${p.y})`));
 } else {
