@@ -215,7 +215,7 @@ function checkCompletedRoad() {
 }
 
 // In kết quả
-if (checkCompletedRoad()) {
+if (checkRoadIncludeLines()) {
     console.log("Đường bao quanh gồm các điểm:");
     road.forEach(p => console.log(`(${p.x}, ${p.y})`));
 } else {
